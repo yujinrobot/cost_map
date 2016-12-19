@@ -48,7 +48,7 @@ ROSCostmapServer::ROSCostmapServer(const std::string& name,
   private_node_handle.setParam(name + "/origin_y", origin.y());
   private_node_handle.setParam(name + "/width", width);
   private_node_handle.setParam(name + "/height", height);
-  private_node_handle.setParam(name + "/resolution", 1.0);
+  private_node_handle.setParam(name + "/resolution", 0.5);
   private_node_handle.setParam(name + "/robot_radius", 0.03); // clears 1 cell if inside, up to 4 cells on a vertex
   costmap = std::make_shared<ROSCostmap>(name, transform_listener);
 

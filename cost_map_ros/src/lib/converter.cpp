@@ -390,6 +390,8 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
   ****************************************/
 
   double resolution = ros_costmap.getCostmap()->getResolution();
+  int number_of_cells_x = ros_costmap.getCostmap()->getSizeInCellsX();
+  int number_of_cells_y = ros_costmap.getCostmap()->getSizeInCellsY();
   double original_size_x = ros_costmap.getCostmap()->getSizeInCellsX() * resolution;
   double original_size_y = ros_costmap.getCostmap()->getSizeInCellsY() * resolution;
 
@@ -440,31 +442,22 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
 
   // float versions of the cell co-ordinates, use static_cast<int> to get the indices
   cost_map::Position robot_cell_position = (robot_position - ros_map_origin)/resolution;
-  std::cout << "Robot Cell Position " << robot_cell_position.transpose() << std::endl;
-  cost_map::Position new_cost_map_origin2;
-  new_cost_map_origin2 <<  // eigen co-efficient wise operator?
-      std::floor(robot_cell_position.x())*resolution + resolution/2.0 + ros_map_origin.x(),
-      std::floor(robot_cell_position.y())*resolution + resolution/2.0 + ros_map_origin.y();
 
-  double fake_origin_x = robot_position.x() - ros_costmap.getCostmap()->getSizeInMetersX() / 2;
-  double fake_origin_y = robot_position.y() - ros_costmap.getCostmap()->getSizeInMetersY() / 2;
-
-  int fake_origin_cell_x, fake_origin_cell_y;
-  fake_origin_cell_x = int((fake_origin_x - ros_map_origin.x()) / resolution);
-  fake_origin_cell_y = int((fake_origin_y - ros_map_origin.y()) / resolution);
-
-  // compute the associated world coordinates for the origin cell
-  // because we want to keep things grid-aligned
-  double fake_origin_aligned_x, fake_origin_aligned_y;
-  fake_origin_aligned_x = ros_map_origin.x() + fake_origin_cell_x * resolution;
-  fake_origin_aligned_y = ros_map_origin.y() + fake_origin_cell_y * resolution;
-
-  new_cost_map_origin <<
-      fake_origin_aligned_x + original_size_x / 2,
-      fake_origin_aligned_y + original_size_y / 2;
-
-  std::cout << "New Cost Map Origin: " << new_cost_map_origin.transpose() << std::endl;
-  std::cout << "New Cost Map Origin: " << new_cost_map_origin2.transpose() << std::endl;
+  // if there is an odd number of cells
+  //   centre of the new grid map in the centre of the current cell
+  // if there is an even number of cells
+  //   centre of the new grid map at the closest vertex between cells
+  // of the current cell
+  if ( number_of_cells_x % 2 ) { // odd
+    new_cost_map_origin(0) = std::floor(robot_cell_position.x())*resolution + resolution/2.0 + ros_map_origin.x();
+  } else {
+    new_cost_map_origin(0) = std::round(robot_cell_position.x())*resolution + ros_map_origin.x();
+  }
+  if ( number_of_cells_y % 2 ) { // odd
+    new_cost_map_origin(1) = std::floor(robot_cell_position.y())*resolution + resolution/2.0 + ros_map_origin.y();
+  } else {
+    new_cost_map_origin(1) = std::round(robot_cell_position.y())*resolution + ros_map_origin.y();
+  }
 
   /****************************************
   ** Initialise the CostMap
@@ -479,17 +472,17 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
   double subwindow_bottom_left_x = new_cost_map_origin.x() - geometry.x() / 2.0;
   double subwindow_bottom_left_y = new_cost_map_origin.y() - geometry.y() / 2.0;
 
-  double resolution_offset_x = std::abs(std::fmod(subwindow_bottom_left_x, resolution));
-  double resolution_offset_y = std::abs(std::fmod(subwindow_bottom_left_y, resolution));
-
-  // The way the conversion of world to map coordinate is done in costmap_2d is:
-  //    mx = (int)((wx - origin_x_) / resolution_);
-  // Because of numeric inaccuracy with the division we can end up with something too low
-  // So we add a buffer. The buffer has have the same sign because of the used int cast
-  // which is not rounding, but just cutting off
-  double numeric_inaccuracy_fix = 0.5 * resolution;
-  subwindow_bottom_left_x += std::copysign(numeric_inaccuracy_fix - resolution_offset_x, subwindow_bottom_left_x);
-  subwindow_bottom_left_y += std::copysign(numeric_inaccuracy_fix - resolution_offset_y, subwindow_bottom_left_y);
+//  double resolution_offset_x = std::abs(std::fmod(subwindow_bottom_left_x, resolution));
+//  double resolution_offset_y = std::abs(std::fmod(subwindow_bottom_left_y, resolution));
+//
+//  // The way the conversion of world to map coordinate is done in costmap_2d is:
+//  //    mx = (int)((wx - origin_x_) / resolution_);
+//  // Because of numeric inaccuracy with the division we can end up with something too low
+//  // So we add a buffer. The buffer has have the same sign because of the used int cast
+//  // which is not rounding, but just cutting off
+//  double numeric_inaccuracy_fix = 0.5 * resolution;
+//  subwindow_bottom_left_x += std::copysign(numeric_inaccuracy_fix - resolution_offset_x, subwindow_bottom_left_x);
+//  subwindow_bottom_left_y += std::copysign(numeric_inaccuracy_fix - resolution_offset_y, subwindow_bottom_left_y);
 
   //debug
 //  if ((robot_aligned - robot_position).norm() > 3 * resolution)

@@ -22,6 +22,7 @@ void broadcastCostmap2DROSTestSuiteTransforms(TransformBroadcaster& broadcaster)
   broadcaster.add("base_link_4x4", tf::Vector3(1.0, -3.0, 0.0), tf::Quaternion(0, 0, 0, 1));
   broadcaster.add("base_link_5x5_3x3_offset", tf::Vector3(-3.7, 2.4, 0.0), tf::Quaternion(0, 0, 0, 1));
   broadcaster.add("base_link_5x5_3x3_centre", tf::Vector3(-3.5, -3.5, 0.0), tf::Quaternion(0, 0, 0, 1));
+  broadcaster.add("base_link_5x5_2_5x2_5_offset", tf::Vector3(-9.7, 2.4, 0.0), tf::Quaternion(0, 0, 0, 1));
   broadcaster.startBroadCastingThread();
 }
 

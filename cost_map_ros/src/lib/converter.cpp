@@ -390,8 +390,9 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
   ****************************************/
 
   double resolution = ros_costmap.getCostmap()->getResolution();
-  int number_of_cells_x = ros_costmap.getCostmap()->getSizeInCellsX();
-  int number_of_cells_y = ros_costmap.getCostmap()->getSizeInCellsY();
+  // Note: don't use getSizeInMeters() here - it doesn't give the actual grid size...for
+  // some reason they designed it so that it cuts it short at the centre of the last cell
+  //            e.g. 10 cells, resolution 1.0 -> getSizeInMeters() == 9.5
   double original_size_x = ros_costmap.getCostmap()->getSizeInCellsX() * resolution;
   double original_size_y = ros_costmap.getCostmap()->getSizeInCellsY() * resolution;
 
@@ -448,6 +449,8 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
   // if there is an even number of cells
   //   centre of the new grid map at the closest vertex between cells
   // of the current cell
+  int number_of_cells_x = geometry.x()/resolution;
+  int number_of_cells_y = geometry.y()/resolution;
   if ( number_of_cells_x % 2 ) { // odd
     new_cost_map_origin(0) = std::floor(robot_cell_position.x())*resolution + resolution/2.0 + ros_map_origin.x();
   } else {
@@ -469,40 +472,6 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
   /****************************************
   ** Copy Data
   ****************************************/
-  double subwindow_bottom_left_x = new_cost_map_origin.x() - geometry.x() / 2.0;
-  double subwindow_bottom_left_y = new_cost_map_origin.y() - geometry.y() / 2.0;
-
-//  double resolution_offset_x = std::abs(std::fmod(subwindow_bottom_left_x, resolution));
-//  double resolution_offset_y = std::abs(std::fmod(subwindow_bottom_left_y, resolution));
-//
-//  // The way the conversion of world to map coordinate is done in costmap_2d is:
-//  //    mx = (int)((wx - origin_x_) / resolution_);
-//  // Because of numeric inaccuracy with the division we can end up with something too low
-//  // So we add a buffer. The buffer has have the same sign because of the used int cast
-//  // which is not rounding, but just cutting off
-//  double numeric_inaccuracy_fix = 0.5 * resolution;
-//  subwindow_bottom_left_x += std::copysign(numeric_inaccuracy_fix - resolution_offset_x, subwindow_bottom_left_x);
-//  subwindow_bottom_left_y += std::copysign(numeric_inaccuracy_fix - resolution_offset_y, subwindow_bottom_left_y);
-
-  //debug
-//  if ((robot_aligned - robot_position).norm() > 3 * resolution)
-//  {
-//    //something funny happened
-//    std::cout << "[cost_map]: Got an apparently wrong position out of the cost_map conversion" << std::endl;
-//    std::cout << "  Resolution        : " << resolution << std::endl;
-//    std::cout << "  original size     : " << original_size_x << "x" << original_size_y << std::endl;
-//    std::cout << "  Size              : " << geometry.x() << "x" << geometry.y() << std::endl;
-//    std::cout << "  Robot Pose        : " << robot_position.x() << "," << robot_position.y() << std::endl;
-//    std::cout << "  fake_origin       : " << fake_origin_x << "x" << fake_origin_y << std::endl;
-//    std::cout << "  fake_origin_cell  : " << fake_origin_cell_x << "x" << fake_origin_cell_y << std::endl;
-//    std::cout << "  fake_ aligned     : " << fake_origin_aligned_x << "x" << fake_origin_aligned_y << std::endl;
-//    std::cout << "  robot_aligned     : " << robot_aligned_x << "x" << robot_aligned_y << std::endl;
-//    std::cout << "  resolution_offset : " << resolution_offset_x << "x" << resolution_offset_y << std::endl;
-//    std::cout << "  subwindow before  : " << new_cost_map_origin.x() - geometry.x() / 2.0 << "x" << new_cost_map_origin.y() - geometry.y() / 2.0 << std::endl;
-//    std::cout << "  subwindow after   : " << subwindow_bottom_left_x << "x" << subwindow_bottom_left_y << std::endl;
-//    std::cout << "  ros_map_origin    : " << ros_map_origin.x() << "x" << ros_map_origin.y() << std::endl;
-//  }
-
   bool is_valid_window = false;
   costmap_2d::Costmap2D costmap_subwindow;
   {
@@ -510,7 +479,8 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
 
     is_valid_window = costmap_subwindow.copyCostmapWindow(
                             *(ros_costmap.getCostmap()),
-                            subwindow_bottom_left_x, subwindow_bottom_left_y,
+                            new_cost_map_origin.x() - geometry.x() / 2.0, // subwindow_bottom_left_x
+                            new_cost_map_origin.y() - geometry.y() / 2.0, // subwindow_bottom_left_y
                             geometry.x(),
                             geometry.y());
   }

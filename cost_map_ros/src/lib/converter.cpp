@@ -598,6 +598,14 @@ ROSCostMap2DServiceProvider::ROSCostMap2DServiceProvider(costmap_2d::Costmap2DRO
   service = private_nodehandle.advertiseService(service_name, &ROSCostMap2DServiceProvider::callback, this);
 }
 
+ROSCostMap2DServiceProvider::ROSCostMap2DServiceProvider(costmap_2d::Costmap2DROS* ros_costmap,
+                                                         ros::NodeHandle& node_handle,
+                                                         const std::string& service_name)
+: ros_costmap(ros_costmap)
+{
+  service = node_handle.advertiseService(service_name, &ROSCostMap2DServiceProvider::callback, this);
+}
+
 bool ROSCostMap2DServiceProvider::callback(
     cost_map_msgs::GetCostMap::Request  &request,
     cost_map_msgs::GetCostMap::Response &response)

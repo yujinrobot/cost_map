@@ -43,46 +43,16 @@
 namespace cost_map {
 
 /*****************************************************************************
-** Image Bundles
-*****************************************************************************/
-
-/**
- * @brief Initialises a adds a single layer from a yaml/image resource pair.
- *
- * @warning this will change the geometry of the provided costmap and delete all layers!
- * @todo bool result/exception handling for when things go wrong
- *
- * @param[in] filename : yaml file
- * @param[out] cost_map :
- */
-void fromImageBundle(const std::string& filename, cost_map::CostMap& cost_map);
-/**
- * @brief Dump a cost map to an image bundle set of files.
- *
- * This creates the specified yaml file with image bundle meta information
- * and a set of png images alongside, one for each layer in the cost map.
- *
- * @todo bool result/exception handling for when things go wrong
- *
- * @param[in] filename : name of the yaml file to write
- * @param[in] cost_map : cost map to dump
- */
-void toImageBundle(const std::string& filename, const cost_map::CostMap& cost_map);
-
-// this might be an interesting api to have too
-// void addLayerFromImageFile()
-
-/*****************************************************************************
 ** CostMap and GridMap
 *****************************************************************************/
 
 /**
- * @todo should be a void function with ref argument so people
- * can use smart pointers or objects with this function
- * @param cost_map
- * @return
+ * @brief Convert a cost map object into a grid map object.
+ *
+ * @param cost_map : incoming cost_map
+ * @param grid_map : outgoing grid_map (Warning: this resets everything!)
  */
-grid_map::GridMap toGridMap(const cost_map::CostMap cost_map);
+void toGridMap(const cost_map::CostMap cost_map, grid_map::GridMap& grid_map);
 
 /*****************************************************************************
 ** ROS Messages
@@ -134,7 +104,7 @@ bool addLayerFromROSImage(const sensor_msgs::Image& image,
  * @note We should, but cannot use a const for the ros costmap since it hasn't been very
  * well designed. Treat it as such and do not change the internals inside.
  */
-void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
+bool fromCostmap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
                       const std::string& layer_name,
                       cost_map::CostMap& cost_map);
 
@@ -154,34 +124,21 @@ void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
  * @note We should, but cannot use a const for the ros costmap since it hasn't been very
  * well designed. Treat it as such and do not change the internals inside.
  */
-void fromCostMap2DROS(costmap_2d::Costmap2DROS& ros_costmap,
-                      const cost_map::Length& geometry,
-                      const std::string& layer_name,
-                      cost_map::CostMap& cost_map);
-
-/**
- * @brief Copies all data from a CostMap2D object to the target cost map.
- *
- * The data will be put in a new layer called "obstacle_costs"
- *
- * @param copied_cost_map : a traditional ros Costmap2D object.
- * @param target_cost_map : Ptr to target cost_map.
- *
- * @note We should, but cannot use a const for the ros Costmap2D since it hasn't been very
- * well designed. Treat it as such and do not change the internals inside.
- */
-void addLayerFromCostMap2D(costmap_2d::Costmap2D& costmap_2d,
-                           const std::string& layer_name,
-                           CostMap& cost_map);
+bool fromCostmap2DROSAtRobotPose(costmap_2d::Costmap2DROS& ros_costmap,
+                                 const cost_map::Length& geometry,
+                                 const std::string& layer_name,
+                                 cost_map::CostMap& cost_map);
 
 void toOccupancyGrid(const cost_map::CostMap& cost_map, const std::string& layer, nav_msgs::OccupancyGrid& msg);
 
 /**
  * @brief Provide cost_map::fromROSCostMap2D() as a ros service.
  */
-class ROSCostMap2DServiceProvider {
+class Costmap2DROSServiceProvider {
 public:
-  ROSCostMap2DServiceProvider(costmap_2d::Costmap2DROS* ros_costmap,
+  Costmap2DROSServiceProvider(costmap_2d::Costmap2DROS* ros_costmap,
+                              const std::string& service_name="get_cost_map");
+  ROSCostMap2DServiceProvider(costmap_2d::Costmap2DROS* ros_costmap, ros::NodeHandle& node_handle,
                               const std::string& service_name="get_cost_map");
   ROSCostMap2DServiceProvider(costmap_2d::Costmap2DROS* ros_costmap, ros::NodeHandle& node_handle,
                               const std::string& service_name="get_cost_map");

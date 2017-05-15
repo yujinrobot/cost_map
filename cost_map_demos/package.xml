@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>cost_map_demos</name>
-  <version>0.2.0</version>
+  <version>0.3.1</version>
   <description>
    Demonstrations for cost maps.
   </description>
@@ -16,7 +16,6 @@
   <depend>costmap_2d</depend>
   <depend>ecl_build</depend>
   <depend>ecl_console</depend>
-  <depend>ecl_exceptions</depend>
   <depend>cost_map_ros</depend>
   <depend>cost_map_visualisations</depend>
   <depend>nav_msgs</depend>
